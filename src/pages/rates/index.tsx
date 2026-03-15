@@ -12,10 +12,10 @@ import {
   Badge,
 } from "@mantine/core";
 import { IconDeviceFloppy, IconAlertCircle } from "@tabler/icons-react";
-import { useList, useCustom } from "@refinedev/core";
+import { useList, useCustomMutation } from "@refinedev/core";
 import { useHotelStore } from "../../contexts/hotelStore";
 import type { Rate, DayPrice } from "../../models";
-import { generateDateColumns, formatDate, formatPrice } from "../../utils";
+import { generateDateColumns, formatDate } from "../../utils";
 import { format } from "date-fns";
 
 const OCCUPANCY_FIELDS = ["sgl", "dbl", "tpl", "full"] as const;
@@ -39,15 +39,16 @@ export function RatesPage() {
     [startDate]
   );
 
-  const { data: ratesData, isLoading: ratesLoading } = useList<Rate>({
+  const { result: ratesResult, query: ratesQuery } = useList<Rate>({
     resource: "rates",
-    pagination: { current: 1, pageSize: 100 },
+    pagination: { currentPage: 1, pageSize: 100 },
     queryOptions: { enabled: !!activeHotelId },
   });
 
-  const rates = ratesData?.data ?? [];
+  const ratesLoading = ratesQuery.isLoading;
+  const rates = ratesResult.data ?? [];
 
-  const { data: pricesData, isLoading: pricesLoading } = useList<DayPrice>({
+  const { result: pricesResult, query: pricesQuery } = useList<DayPrice>({
     resource: "prices",
     meta: {
       rateId: selectedRateId ? Number(selectedRateId) : undefined,
@@ -56,19 +57,14 @@ export function RatesPage() {
         end_date: dateColumns[dateColumns.length - 1],
       },
     },
-    pagination: { current: 1, pageSize: 500 },
+    pagination: { currentPage: 1, pageSize: 500 },
     queryOptions: { enabled: !!activeHotelId && !!selectedRateId },
   });
 
-  const prices = pricesData?.data ?? [];
+  const pricesLoading = pricesQuery.isLoading;
+  const prices = pricesResult.data ?? [];
 
-  const { mutate: customMutate } = useCustom({
-    url: activeHotelId && selectedRateId
-      ? `https://api.effectivetours.com/v1/hotels/${activeHotelId}/rates/${selectedRateId}/prices`
-      : "",
-    method: "post",
-    queryOptions: { enabled: false },
-  });
+  const { mutateAsync: customMutateAsync } = useCustomMutation();
 
   // Build price map: date -> DayPrice
   const priceMap = useMemo(() => {
@@ -118,7 +114,7 @@ export function RatesPage() {
     });
 
     try {
-      await customMutate({
+      await customMutateAsync({
         url: `https://api.effectivetours.com/v1/hotels/${activeHotelId}/rates/${selectedRateId}/prices`,
         method: "post",
         values: { prices: payload },
@@ -132,7 +128,7 @@ export function RatesPage() {
     } finally {
       setSaving(false);
     }
-  }, [dirtyPrices, selectedRateId, activeHotelId, priceMap, customMutate]);
+  }, [dirtyPrices, selectedRateId, activeHotelId, priceMap, customMutateAsync]);
 
   // Build column headers based on company type
   const priceColumns = useMemo(() => {
@@ -163,7 +159,7 @@ export function RatesPage() {
             placeholder="Select Rate Plan"
             value={selectedRateId}
             onChange={setSelectedRateId}
-            data={rates.map((r) => ({
+            data={rates.map((r: Rate) => ({
               value: r.id.toString(),
               label: r.name,
             }))}

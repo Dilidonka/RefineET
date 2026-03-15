@@ -7,12 +7,13 @@ import { useEffect } from "react";
 export function GlobalHotelSelector() {
   const { activeHotelId, setActiveHotelId, setHotels } = useHotelStore();
 
-  const { data, isLoading } = useList<Hotel>({
+  const { result, query } = useList<Hotel>({
     resource: "hotels",
-    pagination: { current: 1, pageSize: 100 },
+    pagination: { currentPage: 1, pageSize: 100 },
   });
 
-  const hotels = data?.data ?? [];
+  const isLoading = query.isLoading;
+  const hotels = result.data ?? [];
 
   useEffect(() => {
     if (hotels.length > 0) {
@@ -30,7 +31,7 @@ export function GlobalHotelSelector() {
       placeholder="Select Hotel"
       value={activeHotelId?.toString() ?? null}
       onChange={(val) => val && setActiveHotelId(Number(val))}
-      data={hotels.map((h) => ({
+      data={hotels.map((h: Hotel) => ({
         value: h.id.toString(),
         label: h.name,
       }))}
