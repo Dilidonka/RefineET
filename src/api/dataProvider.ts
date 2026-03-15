@@ -45,8 +45,8 @@ export const dataProvider: DataProvider = {
     const params: Record<string, unknown> = {};
 
     if (pagination) {
-      const { current = 1, pageSize = 10 } = pagination;
-      params.page = current;
+      const { currentPage = 1, pageSize = 10 } = pagination;
+      params.page = currentPage;
       params.page_size = pageSize;
     }
 

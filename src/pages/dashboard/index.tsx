@@ -1,4 +1,4 @@
-import { Title, SimpleGrid, Card, Text, Group, Skeleton } from "@mantine/core";
+import { Title, SimpleGrid, Card, Text, Skeleton } from "@mantine/core";
 import { useList } from "@refinedev/core";
 import { useHotelStore } from "../../contexts/hotelStore";
 import type { Room, Reservation } from "../../models";
@@ -6,28 +6,28 @@ import type { Room, Reservation } from "../../models";
 export function DashboardPage() {
   const activeHotelId = useHotelStore((s) => s.activeHotelId);
 
-  const { data: roomsData, isLoading: roomsLoading } = useList<Room>({
+  const { result: roomsResult, query: roomsQuery } = useList<Room>({
     resource: "rooms",
-    pagination: { current: 1, pageSize: 200 },
+    pagination: { currentPage: 1, pageSize: 200 },
     queryOptions: { enabled: !!activeHotelId },
   });
 
-  const { data: reservationsData, isLoading: reservationsLoading } =
+  const { result: reservationsResult, query: reservationsQuery } =
     useList<Reservation>({
       resource: "reservations",
-      pagination: { current: 1, pageSize: 200 },
+      pagination: { currentPage: 1, pageSize: 200 },
       queryOptions: { enabled: !!activeHotelId },
     });
 
-  const rooms = roomsData?.data ?? [];
-  const reservations = reservationsData?.data ?? [];
-  const isLoading = roomsLoading || reservationsLoading;
+  const rooms = roomsResult.data ?? [];
+  const reservations = reservationsResult.data ?? [];
+  const isLoading = roomsQuery.isLoading || reservationsQuery.isLoading;
 
   const checkedIn = reservations.filter(
-    (r) => r.status === "checked_in"
+    (r: Reservation) => r.status === "checked_in"
   ).length;
   const confirmed = reservations.filter(
-    (r) => r.status === "confirmed"
+    (r: Reservation) => r.status === "confirmed"
   ).length;
   const occupancyRate =
     rooms.length > 0

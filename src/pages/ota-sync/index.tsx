@@ -5,7 +5,6 @@ import {
   TextInput,
   Select,
   Button,
-  Group,
   Stack,
   Text,
   Notification,
@@ -16,7 +15,7 @@ import {
   IconCheck,
   IconAlertCircle,
 } from "@tabler/icons-react";
-import { useCustom, useList } from "@refinedev/core";
+import { useCustomMutation, useList } from "@refinedev/core";
 import { useHotelStore } from "../../contexts/hotelStore";
 import type { Rate } from "../../models";
 import { format } from "date-fns";
@@ -37,26 +36,20 @@ export function OtaSyncPage() {
   const [success, setSuccess] = useState(false);
   const [errors, setErrors] = useState<OtaError[]>([]);
 
-  const { data: ratesData } = useList<Rate>({
+  const { result: ratesResult } = useList<Rate>({
     resource: "rates",
-    pagination: { current: 1, pageSize: 100 },
+    pagination: { currentPage: 1, pageSize: 100 },
     queryOptions: { enabled: !!activeHotelId },
   });
 
   // Gather unique channels from rate mappings
-  const channels = (ratesData?.data ?? [])
-    .flatMap((r) => r.channel_mappings ?? [])
+  const channels = (ratesResult.data ?? [])
+    .flatMap((r: Rate) => r.channel_mappings ?? [])
     .filter(
-      (c, i, arr) => arr.findIndex((x) => x.channel_id === c.channel_id) === i
+      (c: { channel_id: number; channel_name: string }, i: number, arr: { channel_id: number; channel_name: string }[]) => arr.findIndex((x) => x.channel_id === c.channel_id) === i
     );
 
-  const { mutate: customMutate } = useCustom({
-    url: activeHotelId
-      ? `https://api.effectivetours.com/v1/hotels/${activeHotelId}/ota-update`
-      : "",
-    method: "post",
-    queryOptions: { enabled: false },
-  });
+  const { mutateAsync: customMutateAsync } = useCustomMutation();
 
   const handleSync = async () => {
     if (!activeHotelId || !channelId || !startDate || !endDate) return;
@@ -66,7 +59,7 @@ export function OtaSyncPage() {
     setErrors([]);
 
     try {
-      await customMutate({
+      await customMutateAsync({
         url: `https://api.effectivetours.com/v1/hotels/${activeHotelId}/ota-update`,
         method: "post",
         values: {

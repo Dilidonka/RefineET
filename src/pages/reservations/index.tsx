@@ -52,25 +52,25 @@ export function ReservationsPage() {
     [startDate]
   );
 
-  const { data: roomsData, isLoading: roomsLoading } = useList<Room>({
+  const { result: roomsResult, query: roomsQuery } = useList<Room>({
     resource: "rooms",
-    pagination: { current: 1, pageSize: 200 },
+    pagination: { currentPage: 1, pageSize: 200 },
     queryOptions: { enabled: !!activeHotelId },
   });
 
-  const { data: reservationsData, isLoading: reservationsLoading } =
+  const { result: reservationsResult, query: reservationsQuery } =
     useList<Reservation>({
       resource: "reservations",
-      pagination: { current: 1, pageSize: 500 },
+      pagination: { currentPage: 1, pageSize: 500 },
       meta: { params: { start_date: dateColumns[0], end_date: dateColumns[dateColumns.length - 1] } },
       queryOptions: { enabled: !!activeHotelId },
     });
 
   const { mutate: updateReservation } = useUpdate();
 
-  const rooms = roomsData?.data ?? [];
-  const reservations = reservationsData?.data ?? [];
-  const isLoading = roomsLoading || reservationsLoading;
+  const rooms = roomsResult.data ?? [];
+  const reservations = reservationsResult.data ?? [];
+  const isLoading = roomsQuery.isLoading || reservationsQuery.isLoading;
 
   const cellHeight = viewMode === "comfortable" ? 48 : 32;
   const cellWidth = 90;
@@ -95,7 +95,7 @@ export function ReservationsPage() {
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
-      const res = reservations.find((r) => r.id === Number(event.active.id));
+      const res = reservations.find((r: Reservation) => r.id === Number(event.active.id));
       setActiveReservation(res ?? null);
     },
     [reservations]
@@ -110,7 +110,7 @@ export function ReservationsPage() {
       const reservationId = Number(active.id);
       const [newRoomId, newDate] = (over.id as string).split("__");
 
-      const reservation = reservations.find((r) => r.id === reservationId);
+      const reservation = reservations.find((r: Reservation) => r.id === reservationId);
       if (!reservation) return;
 
       const nights = getNights(reservation.start_date, reservation.end_date);
@@ -229,7 +229,7 @@ export function ReservationsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rooms.map((room, rowIdx) => (
+                {rooms.map((room: Room, rowIdx: number) => (
                   <tr
                     key={room.id}
                     style={{
